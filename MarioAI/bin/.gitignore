@@ -1,7 +1,5 @@
-/.classpath
-/.project
-/DetailedInfo.txt
+/org/
+/json/
 /cmps244/
-/cmps244Lib/
 /dk/
-/player.txt
+/cmps244Lib/
