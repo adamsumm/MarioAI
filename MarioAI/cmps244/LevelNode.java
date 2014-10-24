@@ -14,51 +14,82 @@ import cmps244Lib.WeightPair;
 
 
 public class LevelNode {
-    static Random rand = new Random();
+	static Random rand = new Random();
 	public ArrayList<WeightPair<String> >  potentialRight;
 	public static Hashtable<String,LevelNode> levelPieces = new Hashtable<String,LevelNode>();
 	public String levelChunk;
+	public int position;
+	public static double K = Math.sqrt(2);
 	public static int levelSize = 160;
-	public static int numIterations = 100;
-    static double epsilon = 1e-6;
+	public static int numIterations = 2000;
+	static double epsilon = 1e-6;
 	LevelNode parent;
-	LevelNode[] children;
+	ArrayList<LevelNode> children;
 	public double nVisits, totValue;
+	public LevelNode(String[] allChunks){
+		levelChunk = "";
+		potentialRight = new ArrayList<WeightPair<String> >();
+		for (String chunk : allChunks){
+			potentialRight.add(new WeightPair<String>(1,chunk));
+		}
+		children = new ArrayList<LevelNode>();
 
+	}
 	public LevelNode(String chunk,JSONObject json){
 		levelChunk = chunk;
 		JSONObject directions = json.getJSONObject(chunk);
 		JSONObject rightJSON = directions.getJSONObject("right");
-	//	JSONObject leftJSON = directions.getJSONObject("left");
-		
+		//	JSONObject leftJSON = directions.getJSONObject("left");
+
 		String[] rightNodes = JSONObject.getNames(rightJSON);
-		
+
 		potentialRight = new ArrayList<WeightPair<String> >();
 		if (rightNodes != null){
 			for (String node : rightNodes){
 				potentialRight.add(new WeightPair<String>(rightJSON.getInt(node),node));
 			}
 		}
-/*
+		children = new ArrayList<LevelNode>();
+
+		/*
 		String[] leftNodes = JSONObject.getNames(leftJSON);
 		potentialLeft = new ArrayList<WeightPair<String> >();
 		for (String node : leftNodes){
 			potentialLeft.add(new WeightPair<String>(leftJSON.getInt(node),node));
 		}
-		*/
+		 */
 		levelPieces.put(chunk, this);
 	}
-	
+
 	public LevelNode(LevelNode other){
+
 		potentialRight = new ArrayList<WeightPair<String> >(other.potentialRight);
 		levelChunk = other.levelChunk;
+		children = new ArrayList<LevelNode>();
 	}
-	
+
+    public void backUp(LevelNode node, double result)   {
+    	LevelNode n = node;
+        while(n != null)
+        {
+            n.nVisits++;
+            n.totValue += result;
+            n = n.parent;
+        }
+    }
 	public LevelNode selectAction() {
+		for (int ii =0; ii < numIterations; ii++){
+			LevelNode selected = select();
+			double delta = selected.rollOut();
+			backUp(selected,delta);
+		}
+		return bestAction();
+		/*
         List<LevelNode> visited = new LinkedList<LevelNode>();
         LevelNode cur = this;
         visited.add(this);
         for (int ii = 0; ii < numIterations; ii++){
+        	cur = this;
 	        while (!cur.isLeaf()) {
 	            cur = cur.select();
 	            visited.add(cur);
@@ -68,7 +99,6 @@ public class LevelNode {
 	        visited.add(newNode);
 	        double value = rollOut(newNode);
 	        for (LevelNode node : visited) {
-	       // 	System.out.println(visited.size() + ", "+ node);
 	            node.updateStats(value);
 	        }
         }
@@ -81,22 +111,42 @@ public class LevelNode {
         	}
         }
         return best;
-    }
-	 public void expand() {
-		 /*
-	        children = new LevelNode[nActions];
-	        for (int i=0; i<nActions; i++) {
-	            children[i] = new LevelNode();
-	        }
-	        */
-		 children = new LevelNode[potentialRight.size()];
-		 for (int ii = 0; ii < potentialRight.size(); ii++){
-			 children[ii] = new LevelNode(levelPieces.get(potentialRight.get(ii).obj));
-			 children[ii].parent = this;
-		 }
+		 */
 	}
+    public LevelNode bestAction()
+    {
+        int selected = -1;
+        double bestValue = Double.NEGATIVE_INFINITY;
 
-	    private LevelNode select() {
+        for (int ii=0; ii<children.size(); ii++) {
+
+            double tieBreaker = rand.nextDouble() * epsilon;
+            if(children.get(ii) != null && children.get(ii).totValue + tieBreaker > bestValue) {
+                bestValue = children.get(ii).totValue + tieBreaker;
+                selected = ii;
+            }
+        }
+
+        if (selected == -1)
+        {
+            System.out.println("Unexpected selection!");
+            selected = 0;
+        }
+
+        return children.get(selected);
+    }
+	private LevelNode select() {
+		LevelNode current = this;
+		while (current.position < levelSize){
+			if (current.notFullyExpanded()){
+				return current.expand();	    			
+			}
+			else {
+				current = current.uct();
+			}
+		}
+		return current;
+		/*
 	        LevelNode selected = null;
 	        double bestValue = Double.NEGATIVE_INFINITY;
 	        for (LevelNode c : children) {
@@ -110,64 +160,93 @@ public class LevelNode {
 	            }
 	        }
 	        return selected;
-	    }
+		 */
 
-	    public boolean isLeaf() {
-	        return children == null;
-	    }
-	    public int getSize(){
-	    	return levelChunk.indexOf(";")/2;
-	    }
-	    public int getSizeOfParents(){
-	    	if (parent == null){
-	    		return  getSize();
-	    	}
-	    	else {
-	    		return getSize()+parent.getSizeOfParents();
-	    	}
-	    }
-	    public double rollOut(LevelNode tn) {
-	        // ultimately a roll out will end in some value
-	        // assume for now that it ends in a win or a loss
-	        // and just return this at random
-	    	ArrayList<LevelNode> restOfLevel = new ArrayList<LevelNode>();
-	    	randomLevelCreation(restOfLevel,levelSize-getSizeOfParents());
-	    	
-	        return EvaluateLevel(restOfLevel);
-	    	
-	    }
-	    public float EvaluateLevel(ArrayList<LevelNode> restOfLevel){
-	    	//TODO Evaluate level
-	    	int size = getSizeOfParents();
-	    	for (LevelNode node : restOfLevel){
-	    		size += node.getSize();
-	    	}
-	    	
-	    	if (size > levelSize){
-	    		return -1.0f;
-	    	}
-	    	return 1.0f;
-	    }
-	    public void randomLevelCreation(ArrayList<LevelNode> levelSoFar,int totalSize){
-	    	if (totalSize > 0){
-	    		if (this.potentialRight.size() != 0){
-		    		LevelNode nextPiece = new LevelNode(levelPieces.get(WeightPair.GetWeightPair(this.potentialRight,rand.nextFloat()).obj));
-		    		nextPiece.parent = this;
-		    		levelSoFar.add(nextPiece);
-		    		nextPiece.randomLevelCreation(levelSoFar, totalSize-nextPiece.getSize());
-	    		}
-	    	}
-	    	
-	    }
-	    public void updateStats(double value) {
-	        nVisits++;
-	        totValue += value;
-	    }
+	}
+	private boolean notFullyExpanded() {
+		return potentialRight.size() > 0;
+	}
+	public LevelNode uct(){
 
-	    public int arity() {
-	        return children == null ? 0 : children.length;
-	    }
-	
+		LevelNode selected = null;
+		double bestValue = Double.NEGATIVE_INFINITY;
+		for (LevelNode child : children)
+		{
+			double hvVal = child.totValue;
+			double childValue =  hvVal / (child.nVisits + LevelNode.epsilon);
+
+			double uctValue = childValue +
+					LevelNode.K * Math.sqrt(Math.log(this.nVisits + 1) / (child.nVisits + LevelNode.epsilon)) +
+					LevelNode.rand.nextDouble() * LevelNode.epsilon;
+
+			// small sampleRandom numbers: break ties in unexpanded nodes
+			if (uctValue > bestValue) {
+				selected = child;
+				bestValue = uctValue;
+			}
+		}
+
+		return selected;
+	}
+	public LevelNode expand(){
+		WeightPair<String> pair = WeightPair.GetWeightPair(this.potentialRight,rand.nextFloat());
+		String nextChunk = pair.obj;
+		this.potentialRight.remove(pair);
+		LevelNode nextPiece = new LevelNode(levelPieces.get(nextChunk));
+		nextPiece.parent = this;
+		children.add(nextPiece);
+		return nextPiece;
+	}
+	public boolean isLeaf() {
+		return children.size() == 0;
+	}
+	public int getSize(){
+		return levelChunk.indexOf(";")/2;
+	}
+	public int getSizeOfParents(){
+		if (parent == null){
+			return  getSize();
+		}
+		else {
+			return getSize()+parent.getSizeOfParents();
+		}
+	}
+	public double rollOut() {
+		ArrayList<LevelNode> restOfLevel = new ArrayList<LevelNode>();
+		randomLevelCreation(restOfLevel,levelSize-getSizeOfParents());
+
+		return EvaluateLevel(restOfLevel);
+
+	}
+	public float EvaluateLevel(ArrayList<LevelNode> restOfLevel){
+		//TODO Evaluate level
+		int size = getSizeOfParents();
+		for (LevelNode node : restOfLevel){
+			size += node.getSize();
+		}
+
+		if (size > levelSize){
+			return -1.0f;
+		}
+		return 1.0f;
+	}
+	public void randomLevelCreation(ArrayList<LevelNode> levelSoFar,int totalSize){
+		if (totalSize > 0){
+			if (this.potentialRight.size() != 0){
+				String nextChunk = WeightPair.GetWeightPair(this.potentialRight,rand.nextFloat()).obj;
+				LevelNode nextPiece = new LevelNode(levelPieces.get(nextChunk));
+				nextPiece.parent = this;
+				levelSoFar.add(nextPiece);
+				nextPiece.randomLevelCreation(levelSoFar, totalSize-nextPiece.getSize());
+			}
+		}
+
+	}
+	public void updateStats(double value) {
+		nVisits++;
+		totValue += value;
+	}
+
 	public static double evaluateLevel(LevelNode toBeAdded,List<LevelNode> level){
 		return 0.0;
 	}

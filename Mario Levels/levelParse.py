@@ -81,6 +81,21 @@ def parseLevel(level,tiles):
 			for ii in range(0,levelMap.shape[1],1):
 				#for jj in range(0,levelMap.shape[0],2):
 				getTileAndTransitions(tiles,levelMap,ii,0,sourceSize,tileSize,14)
+	toRemove = []			
+	for tile in tiles:
+		if len(tiles[tile]["right"]) == 0:
+			toRemove.append(tile)
+	while len(toRemove) > 0:
+		for tile in toRemove:
+			del tiles[tile]
+		for tile in tiles:
+			for rem in toRemove:
+				if rem in tiles[tile]["right"]:
+					del tiles[tile]["right"][rem]
+		toRemove = []			
+		for tile in tiles:
+			if len(tiles[tile]["right"]) == 0:
+				toRemove.append(tile)
 #print tiles
 # plt.plot(puLocations[1],puLocations[0],'gx')
 # plt.plot(breakLocations[1],breakLocations[0],'bx')

@@ -21,22 +21,19 @@ public class PlayCustomized {
 			String tileFile = (CustomizedGenerator.readFile("../Mario Levels/tiles.json",Charset.defaultCharset()));
 			JSONObject json = new JSONObject(tileFile);
 			String[] tiles = JSONObject.getNames(json);
-			LevelNode node = null;
 			ArrayList<LevelNode> list = new ArrayList<LevelNode>();
 			for (String tile : tiles){
 				
-				node = new LevelNode(tile,json);
-				list.add(node);
+				list.add(new LevelNode(tile,json));
 			}
-			Random rand = new Random();
-			node = null;
-			while (node == null || node.potentialRight.size() == 0){
-				node = list.get(rand.nextInt(list.size()));
-			}
-			CustomizedGenerator.printLevelChunk(CustomizedGenerator.stringToLevelChunk(node.levelChunk));
-			node = node.selectAction();
-			CustomizedGenerator.printLevelChunk(CustomizedGenerator.stringToLevelChunk(node.levelChunk));
+			LevelNode node = new LevelNode(tiles);
+			long startTime = System.nanoTime();
 			
+			for (int ii = 0; ii < 100; ii++){
+				node = node.selectAction();
+			//	CustomizedGenerator.printLevelChunk(CustomizedGenerator.stringToLevelChunk(node.levelChunk));
+			}
+			System.out.println((System.nanoTime()-startTime)*1.0e-9);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
