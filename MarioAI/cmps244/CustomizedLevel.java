@@ -58,12 +58,13 @@ public class CustomizedLevel extends Level implements LevelInterface {
 		postProcessing();
     }
     public void postProcessing(){
+    	//For some reason the bottom is cut off
     	for (int xx = 0; xx < width; xx++){
     		if (getBlock(xx,13) == GROUND){
     			setBlock(xx,14,GROUND);
     		}
     	}
-    	
+    	fixPipes();
     	boolean foundExit = false;
     	for (int offset = 0; offset <= 10 && !foundExit; offset++){
     		int xx = width-8+ ((offset % 2)*2-1)*(offset/2);
@@ -82,6 +83,29 @@ public class CustomizedLevel extends Level implements LevelInterface {
     		}
     	}
     	fixWalls();
+    	fixHills();
+    }
+    public void fixPipes(){
+    	for (int xx = 0; xx < width; xx++){
+    		for (int yy = 0; yy < height; yy++){
+    			if (getBlock(xx,yy) == TUBE_TOP_LEFT){
+    				fillPipeDown(xx,yy);
+    			}
+    		}	
+    	}
+    }
+    public void fillPipeDown(int xx, int yy){
+    	setBlock(xx,yy,TUBE_TOP_LEFT);
+    	setBlock(xx+1,yy,TUBE_TOP_RIGHT);
+    	for (int ny = yy+1; ny < height; ny++){
+    		if (getBlock(xx,ny) == GROUND){
+    			return;
+    		}
+    		else {
+    			setBlock(xx,ny,TUBE_SIDE_LEFT);
+    			setBlock(xx+1,ny,TUBE_SIDE_RIGHT);
+    		}
+    	}
     }
     public void fillLevel(int left, int top, String str, int difficulty ){
 		String[] rows = str.split(";");
@@ -147,12 +171,14 @@ public class CustomizedLevel extends Level implements LevelInterface {
             for (int y = 0; y < height + 1; y++)
             {
 		        if (!blockMap[x][y] && getBlockCapped(x,y) == GROUND){
-		        	setBlock(x,y,ROCK);
+		        	setBlock(x,y,HILL_TOP_LEFT);
 		        }
             }
         }
     }
-
+    private void fixHills(){
+    	
+    }
     private void blockify(Level level, boolean[][] blocks, int width, int height){
         int to = 0;
         /*
