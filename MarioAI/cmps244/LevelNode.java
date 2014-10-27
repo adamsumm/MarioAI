@@ -20,12 +20,13 @@ public class LevelNode {
 	public String levelChunk;
 	public int position;
 	public static double K = Math.sqrt(2);
-	public static int levelSize = 160;
-	public static int numIterations = 2000;
+	public static int levelSize = 320;
+	public static int numIterations = 1000;
 	static double epsilon = 1e-6;
-	LevelNode parent;
+	public LevelNode parent;
 	ArrayList<LevelNode> children;
 	public double nVisits, totValue;
+	protected int size = -1;
 	public LevelNode(String[] allChunks){
 		levelChunk = "";
 		potentialRight = new ArrayList<WeightPair<String> >();
@@ -201,31 +202,37 @@ public class LevelNode {
 		return children.size() == 0;
 	}
 	public int getSize(){
-		return levelChunk.indexOf(";")/2;
+		if (levelChunk == ""){
+			return 0;
+		}
+		if (size < 0){
+			size = levelChunk.split(";")[0].split(",").length;
+		}
+		return size;
 	}
-	public int getSizeOfParents(){
+	public int getTotalSize(){
 		if (parent == null){
 			return  getSize();
 		}
 		else {
-			return getSize()+parent.getSizeOfParents();
+			return getSize()+parent.getTotalSize();
 		}
 	}
 	public double rollOut() {
 		ArrayList<LevelNode> restOfLevel = new ArrayList<LevelNode>();
-		randomLevelCreation(restOfLevel,levelSize-getSizeOfParents());
+		randomLevelCreation(restOfLevel,levelSize-getTotalSize());
 
 		return EvaluateLevel(restOfLevel);
 
 	}
 	public float EvaluateLevel(ArrayList<LevelNode> restOfLevel){
 		//TODO Evaluate level
-		int size = getSizeOfParents();
+		int size = getTotalSize();
 		for (LevelNode node : restOfLevel){
 			size += node.getSize();
 		}
 
-		if (size > levelSize){
+		if (size != levelSize){
 			return -1.0f;
 		}
 		return 1.0f;

@@ -17,27 +17,6 @@ public class PlayCustomized {
 
 	public static void main(String[] args)
 	{
-		try {
-			String tileFile = (CustomizedGenerator.readFile("../Mario Levels/tiles.json",Charset.defaultCharset()));
-			JSONObject json = new JSONObject(tileFile);
-			String[] tiles = JSONObject.getNames(json);
-			ArrayList<LevelNode> list = new ArrayList<LevelNode>();
-			for (String tile : tiles){
-				
-				list.add(new LevelNode(tile,json));
-			}
-			LevelNode node = new LevelNode(tiles);
-			long startTime = System.nanoTime();
-			
-			for (int ii = 0; ii < 100; ii++){
-				node = node.selectAction();
-			//	CustomizedGenerator.printLevelChunk(CustomizedGenerator.stringToLevelChunk(node.levelChunk));
-			}
-			System.out.println((System.nanoTime()-startTime)*1.0e-9);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		JFrame frame = new JFrame("Mario Experience Showcase");
 		MarioComponent mario = new MarioComponent(640, 480,true);
 

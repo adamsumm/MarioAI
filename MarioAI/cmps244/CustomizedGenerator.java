@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Random;
 
 import cmps244.LevelEntity;
 public class CustomizedGenerator implements LevelGenerator {
@@ -18,7 +19,19 @@ public class CustomizedGenerator implements LevelGenerator {
 	  return new String(encoded, encoding);
 	}
 
+	public LevelInterface generateLevel(GamePlay playerMetrics) {
+		return new CustomizedLevel(320,15,new Random().nextLong(),1,1,playerMetrics);
+	}
+
+	
+	public LevelInterface generateLevel(String detailedInfo) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+
 	public static LevelEntity[][] stringToLevelChunk(String str){
+		
 		String[] rows = str.split(";");
 		String[] columns = rows[0].split(",");
 		LevelEntity[][] levelChunk = new LevelEntity[columns.length][rows.length];
@@ -60,10 +73,11 @@ public class CustomizedGenerator implements LevelGenerator {
 		}
 		return levelChunk;
 	}
-	public static void printLevelChunk(LevelEntity[][] levelChunk){
+	
+	public static String levelChunkToString(LevelEntity[][] levelChunk){
 		int maxX = levelChunk.length;
 		int maxY = levelChunk[0].length;
-		String outStr = "--\n";
+		String outStr = "";
 		for (int jj = 0; jj < maxY; jj++){ 
 			for (int ii = 0; ii < maxX; ii++){
 				switch(levelChunk[ii][jj]){
@@ -93,19 +107,9 @@ public class CustomizedGenerator implements LevelGenerator {
 						break;
 				}
 			}
-			outStr += "]\n";
+			outStr += "\n";
 		}
-		System.out.println(outStr);
-	}
-	public LevelInterface generateLevel(GamePlay playerMetrics) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	
-	public LevelInterface generateLevel(String detailedInfo) {
-		// TODO Auto-generated method stub
-		return null;
+		return outStr;
 	}
 
 }

@@ -56,9 +56,6 @@ def parseLevel(level,tiles):
 	for ii in range(0,breakLocations[0].size):
 		levelMap[clamp(round(breakLocations[0][ii]/16),0,levelMap.shape[0]-1),clamp(round(breakLocations[1][ii]/16),0,levelMap.shape[1]-1)] = 2
 
-	for ii in range(0,puLocations[0].size):
-		levelMap[clamp(round(puLocations[0][ii]/16),0,levelMap.shape[0]-1)+1,clamp(round(puLocations[1][ii]/16),0,levelMap.shape[1]-1)] = 3
-
 	for ii in range(0,goodLocations[0].size):
 		levelMap[clamp(round(goodLocations[0][ii]/16),0,levelMap.shape[0]-1),clamp(round(goodLocations[1][ii]/16),0,levelMap.shape[1]-1)] = 4
 
@@ -73,9 +70,14 @@ def parseLevel(level,tiles):
 			if (levelMap[clamp(round(pipeLocations[0][ii]/16),0,levelMap.shape[0]-1)+jj,clamp(round(pipeLocations[1][ii]/16),0,levelMap.shape[1]-1)] == 0):
 				levelMap[clamp(round(pipeLocations[0][ii]/16),0,levelMap.shape[0]-1)+jj,clamp(round(pipeLocations[1][ii]/16),0,levelMap.shape[1]-1)] = 6
 				levelMap[clamp(round(pipeLocations[0][ii]/16),0,levelMap.shape[0]-1)+jj,clamp(round(pipeLocations[1][ii]/16),0,levelMap.shape[1]-1)+1] = 6
-
+	
+	for ii in range(0,puLocations[0].size):
+		levelMap[clamp(round(puLocations[0][ii]/16),0,levelMap.shape[0]-1)+1,clamp(round(puLocations[1][ii]/16),0,levelMap.shape[1]-1)] = 3
 	minTileSize = 2;
 	maxTileSize = 8;
+	
+	plt.imshow(levelMap)
+	plt.show()
 	for sourceSize in range(2,10,2):
 		for tileSize in range(2,10,2):
 			for ii in range(0,levelMap.shape[1],1):
@@ -106,8 +108,6 @@ def parseLevel(level,tiles):
 # plt.plot(pipeLocations[1],pipeLocations[0],'go');
 # plt.show()
 
-# plt.imshow(levelMap)
-# plt.show()
 
 
 def clamp(val,minimum,maximum):

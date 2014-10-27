@@ -25,10 +25,11 @@ import dk.itu.mario.engine.MarioComponent;
 import dk.itu.mario.level.CustomizedLevel;
 import dk.itu.mario.level.Level;
 import dk.itu.mario.level.RandomLevel;
-import dk.itu.mario.level.generator.CustomizedLevelGenerator;
 import dk.itu.mario.engine.Play;
 import dk.itu.mario.res.ResourcesManager;
 
+
+import cmps244.CustomizedGenerator;
 	public class LevelSceneTest extends LevelScene{
 
 			ArrayList<Double> switchPoints;
@@ -57,7 +58,7 @@ import dk.itu.mario.res.ResourcesManager;
 
 		        if(level==null)
 		        	if(isCustom){
-		        		CustomizedLevelGenerator clg = new CustomizedLevelGenerator();
+		        		CustomizedGenerator clg = new CustomizedGenerator();
 		        		GamePlay gp = new GamePlay();
 		        		gp = gp.read("player.txt");
 		        		currentLevel = (Level)clg.generateLevel(gp);
