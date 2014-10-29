@@ -77,7 +77,8 @@ public class Mario extends Sprite
         Mario.instance = this;
         this.world = world;
         keys = Scene.keys;
-        x = 32;
+       x = 32;
+       // x = 2600;
         y = 0;
 
         facing = 1;

@@ -326,7 +326,6 @@ public class MarioComponent extends JComponent implements Runnable, KeyListener,
 		    	Mario.large = false;
 		    	Mario.coins = 0;
 		    	Mario.lives = 3;
-
 		    	randomLevel.init();
 		    	randomLevel.setSound(sound);
 		    	scene = randomLevel;

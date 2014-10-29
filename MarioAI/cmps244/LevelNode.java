@@ -1,6 +1,8 @@
 package cmps244;
 
+import java.lang.Math;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
@@ -11,12 +13,16 @@ import java.util.Random;
 import org.json.JSONObject;
 
 import cmps244Lib.WeightPair;
+import dk.itu.mario.engine.sprites.Enemy;
+import dk.itu.mario.engine.sprites.SpriteTemplate;
+import dk.itu.mario.level.Level;
 
 
 public class LevelNode {
 	static Random rand = new Random();
 	public ArrayList<WeightPair<String> >  potentialRight;
 	public static Hashtable<String,LevelNode> levelPieces = new Hashtable<String,LevelNode>();
+	public static Hashtable<String,LevelEntity[][]> levelInstantiations = new Hashtable<String,LevelEntity[][]>();
 	public String levelChunk;
 	public int position;
 	public static double K = Math.sqrt(2);
@@ -27,8 +33,8 @@ public class LevelNode {
 	ArrayList<LevelNode> children;
 	public double nVisits, totValue;
 	protected int size = -1;
-	public LevelNode(String[] allChunks){
-		levelChunk = "";
+	public LevelNode(String lchunk,String[] allChunks){
+		levelChunk = lchunk;
 		potentialRight = new ArrayList<WeightPair<String> >();
 		for (String chunk : allChunks){
 			potentialRight.add(new WeightPair<String>(1,chunk));
@@ -51,7 +57,7 @@ public class LevelNode {
 			}
 		}
 		children = new ArrayList<LevelNode>();
-
+		getSize();
 		/*
 		String[] leftNodes = JSONObject.getNames(leftJSON);
 		potentialLeft = new ArrayList<WeightPair<String> >();
@@ -59,6 +65,7 @@ public class LevelNode {
 			potentialLeft.add(new WeightPair<String>(leftJSON.getInt(node),node));
 		}
 		 */
+		levelInstantiations.put(chunk, getLevel(chunk));
 		levelPieces.put(chunk, this);
 	}
 
@@ -67,6 +74,7 @@ public class LevelNode {
 		potentialRight = new ArrayList<WeightPair<String> >(other.potentialRight);
 		levelChunk = other.levelChunk;
 		children = new ArrayList<LevelNode>();
+		size = other.size;
 	}
 
     public void backUp(LevelNode node, double result)   {
@@ -225,17 +233,56 @@ public class LevelNode {
 		return EvaluateLevel(restOfLevel);
 
 	}
-	public float EvaluateLevel(ArrayList<LevelNode> restOfLevel){
-		//TODO Evaluate level
-		int size = getTotalSize();
-		for (LevelNode node : restOfLevel){
-			size += node.getSize();
-		}
+	public double EvaluateLevel(ArrayList<LevelNode> restOfLevel){
+		LevelEntity[][] level = constructLevel(restOfLevel);
+		int[] enemyDanger = getEnemyDanger(level);
+		double[] enemyStatistics = new double[5];
+		getStatistics(enemyDanger,enemyStatistics);
 
-		if (size != levelSize){
-			return -1.0f;
+
+		int[] gapDanger = getGapDanger(level);
+		double[] gapStatistics = new double[5];
+		getStatistics(gapDanger,gapStatistics);
+		
+		int[] danger = new int[gapDanger.length];
+		for (int ii= 0; ii < danger.length; ii++){
+			danger[ii] = Math.min(gapDanger[ii],enemyDanger[ii]);
 		}
-		return 1.0f;
+		double[] dangerStatistics = new double[5];
+		getStatistics(danger,dangerStatistics);
+		
+		
+		return danger[1];
+		//Decent formula for jumpiness -Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2];
+		//return -enemyStatistics[1]+0.01*-enemyStatistics[2]-enemyStatistics[4];
+	}
+	public void getStatistics(int[] array, double[] statistics){
+		Double total = 0.0;
+		Arrays.sort(array);
+		double min = Double.POSITIVE_INFINITY;
+		double max = Double.NEGATIVE_INFINITY;
+		for (int xx : array){
+			total += xx;
+			if (xx < min){
+				min = xx;
+			}
+			if (xx > max){
+				max = xx;
+			}
+		}
+		statistics[0]= (double) array[array.length/2];
+		statistics[1] = total/array.length;
+		statistics[2] = 0.0;
+		statistics[3] = max;
+		statistics[4] = min;
+		for (int xx :array){
+			double residual = (statistics[1]-xx);
+			
+			statistics[2] += residual*residual;
+		}
+		statistics[2] /= (double) array.length;
+		
+
 	}
 	public void randomLevelCreation(ArrayList<LevelNode> levelSoFar,int totalSize){
 		if (totalSize > 0){
@@ -249,12 +296,124 @@ public class LevelNode {
 		}
 
 	}
+
+    public LevelEntity[][] getLevel( String str ){
+		String[] rows = str.split(";");
+		LevelEntity[][] output = new LevelEntity[rows[0].split(",").length][rows.length];
+		for (int yy = 0; yy < rows.length; yy++){
+			String[] columns = rows[yy].split(",");
+			for (int xx = 0; xx < columns.length; xx++){
+				switch(columns[xx]){
+				case "1.0":
+					output[xx][yy] =  LevelEntity.Solid;
+					break;
+				case "2.0":
+					output[xx][yy] =  LevelEntity.Destructible; 
+					break;
+				case "3.0":
+					output[xx][yy] =  LevelEntity.PowerUp; 
+					break;
+				case "4.0":
+					output[xx][yy] =  LevelEntity.CoinBlock;
+					break;
+				case "5.0":
+					output[xx][yy] = LevelEntity.Enemy;
+					break;
+				case "6.0":
+					output[xx][yy] =  LevelEntity.Pipe;
+					break;
+				case "7.0":
+					output[xx][yy] = LevelEntity.Coin;
+					break;
+				case "8.0":
+					output[xx][yy] = LevelEntity.Cannon;
+					break;
+				default:
+					output[xx][yy] = LevelEntity.Empty;
+					break;
+				}
+				
+			}
+		}
+		return output;
+	}
+    public static void fillLevel(LevelEntity[][] level, int xx,String chunk){
+    	LevelEntity[][] levelChunk = levelInstantiations.get(chunk);
+    	for (int ii = 0; ii < levelChunk.length && ii + xx < level.length; ii++){
+    		for (int jj = 0; jj < levelChunk[ii].length; jj++){
+    			level[ii+xx][jj] = levelChunk[ii][jj];
+    		}
+    	}
+    }
+    public LevelEntity[][] constructLevel(ArrayList<LevelNode> level){
+    	LevelNode node = this;
+    	LevelEntity[][] constructedLevel = new LevelEntity[320][15];
+    	while (node != null){
+			int pos = node.getTotalSize()-node.getSize();
+			fillLevel(constructedLevel,pos,node.levelChunk);
+			node = node.parent;
+		}
+    	int pos = getTotalSize();
+    	for (LevelNode lnode : level){
+    		fillLevel(constructedLevel,pos,lnode.levelChunk);
+    		pos += lnode.size;
+    	}
+    	return constructedLevel;
+    }
+	public int[] getEnemyDanger(LevelEntity[][] level){
+		int[] dangerArray = new int[level.length];
+		Arrays.fill(dangerArray, Integer.MAX_VALUE);
+		int distanceFromEnemy = level.length;
+		for (int xx = 0; xx < level.length; xx++){
+			for (int yy = 0; yy < level[0].length; yy++){
+				if (level[xx][yy] == LevelEntity.Enemy || level[xx][yy] == LevelEntity.Cannon){
+					distanceFromEnemy = 0;
+					int reverseDistanceFromEnemy = 1;
+					for (int nx = xx-1; nx >= 0; nx--){
+						if (dangerArray[xx] > reverseDistanceFromEnemy){
+							dangerArray[xx] = reverseDistanceFromEnemy;
+						}
+						else {
+							break;
+						}
+						reverseDistanceFromEnemy++;
+					}
+					break;
+				}
+			}
+			dangerArray[xx] = distanceFromEnemy;
+			distanceFromEnemy++;
+		}
+		return dangerArray;
+	}
+	public int[] getGapDanger(LevelEntity[][] level){
+		int[] dangerArray = new int[level.length];
+		Arrays.fill(dangerArray, Integer.MAX_VALUE);
+		int distanceFromGround = level.length;
+
+		for (int xx = 0; xx < level.length; xx++){
+			if (level[xx][13] == LevelEntity.Empty){
+				distanceFromGround = 0;
+				int reverseDistanceFromGround = 1;
+				for (int nx = xx-1; nx >= 0; nx--){
+					if (dangerArray[xx] > reverseDistanceFromGround){
+						dangerArray[xx] = reverseDistanceFromGround;
+					}
+					else {
+						break;
+					}
+					reverseDistanceFromGround++;
+				}
+			}
+			
+			dangerArray[xx] = distanceFromGround;
+			distanceFromGround++;
+		}
+		return dangerArray;
+	}
 	public void updateStats(double value) {
 		nVisits++;
 		totValue += value;
 	}
 
-	public static double evaluateLevel(LevelNode toBeAdded,List<LevelNode> level){
-		return 0.0;
-	}
 }

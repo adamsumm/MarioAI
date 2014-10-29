@@ -14,6 +14,7 @@ def parseLevel(level,tiles):
 	breakableTiles = ['01','03','67','68','69'];
 	goodTile = ['24','90'];
 	enemyTiles = ['turtle1','turtle2','fly1','fly2','fly3','fly4','pirannha','turtle1b','turtle2b','fly1b','fly2b','fly3b','fly4b','pirannha2','goomba','goomba2'];
+	bullets = ['09','75'];
 	warpPipe = ['pipe_ul']
 	coins = ['57','58','123'];
 	levelMap = np.zeros((level.shape[0]/16,level.shape[1]/16));
@@ -47,6 +48,11 @@ def parseLevel(level,tiles):
 	coins = map( cv2.imread,coins)
 	coinLocations = findSubImageLocations(level,coins,0.8)	
 
+	
+	bullets = map(lambda str: 'Tiles/tileset_tile'+ str + '.png',bullets)
+	bullets = map( cv2.imread,bullets)
+	bulletLocations = findSubImageLocations(level,bullets,0.8)	
+	
 	plt.imshow(level);
 
 
@@ -64,6 +70,9 @@ def parseLevel(level,tiles):
 		
 	for ii in range(0,coinLocations[0].size):
 		levelMap[clamp(round(coinLocations[0][ii]/16),0,levelMap.shape[0]-1),clamp(round(coinLocations[1][ii]/16),0,levelMap.shape[1]-1)] = 7
+
+	for ii in range(0,bulletLocations[0].size):
+		levelMap[clamp(round(bulletLocations[0][ii]/16),0,levelMap.shape[0]-1),clamp(round(bulletLocations[1][ii]/16),0,levelMap.shape[1]-1)] = 8
 		
 	for ii in range(0,pipeLocations[0].size):
 		for jj in range(0,int(levelMap.shape[0]-1-clamp(round(pipeLocations[0][ii]/16),0,levelMap.shape[0]-1)-1)):
@@ -76,8 +85,8 @@ def parseLevel(level,tiles):
 	minTileSize = 2;
 	maxTileSize = 8;
 	
-	plt.imshow(levelMap)
-	plt.show()
+	#plt.imshow(levelMap)
+	#plt.show()
 	for sourceSize in range(2,10,2):
 		for tileSize in range(2,10,2):
 			for ii in range(0,levelMap.shape[1],1):

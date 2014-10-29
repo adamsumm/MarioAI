@@ -16,7 +16,9 @@ import dk.itu.mario.engine.sprites.Enemy;
 import dk.itu.mario.engine.LevelFactory;
 
 public class CustomizedLevel extends Level implements LevelInterface {
-
+	public static final byte  CANNON = (byte) (14 + 0 * 16);
+	public static final byte  CANNON_CONNECTOR = (byte) (14 + 1 * 16);
+	public static final byte  CANNON_POLE = (byte) (14 + 2 * 16);
     public CustomizedLevel(int width, int height, long seed, int difficulty,
                            int type, GamePlay playerMetrics) {
         super(width, height);
@@ -43,21 +45,39 @@ public class CustomizedLevel extends Level implements LevelInterface {
 
     }
     public void create(){
-
-		LevelNode node = new LevelNode(getTiles());
-		while ( node.getTotalSize() < this.width){
+    	long startTime = System.nanoTime();
+    	String startString = "";
+    	startString = "0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,;";
+    	LevelNode node = new LevelNode(startString,getTiles());
+		//LevelNode node = new LevelNode(getTiles());
+		while ( node.getTotalSize() < this.width-16){
 			node = node.selectAction();
 		}
-		
-		while (node.parent != null){
+		System.out.println(node.getTotalSize());
+		System.out.println((System.nanoTime()-startTime)/1000000000.0);
+    	startTime = System.nanoTime();
+		while (node != null){
 			int pos = node.getTotalSize()-node.getSize();
 			fillLevel(pos,0,node.levelChunk,1);
 			node = node.parent;
 		}
-    	
 		postProcessing();
+		System.out.println((System.nanoTime()-startTime)/1000000000.0);
     }
     public void postProcessing(){
+    	
+    	/*
+    	addExit();
+    	for (int ii = 0; ii < width; ii++){
+    		for (int jj = 0; jj < height; jj++){
+    			if (getBlock(ii,jj) == GROUND){
+    				setBlock(ii,jj,ROCK);
+    			}
+    		}
+    	}*/
+    	addExit();
+    	fixCannons();
+    	
     	//For some reason the bottom is cut off
     	for (int xx = 0; xx < width; xx++){
     		if (getBlock(xx,13) == GROUND){
@@ -65,6 +85,47 @@ public class CustomizedLevel extends Level implements LevelInterface {
     		}
     	}
     	fixPipes();
+    	
+    	
+    	fixWalls();
+    	fixHills();
+    	
+    }
+    private void addExit(){
+
+    	int edgeX = 0, edgeY = 0;
+		boolean foundGround = false;
+    	for (int xx = 1; xx <= 16; xx++){
+    		
+    		for (int yy = height-1; yy >= 0; yy--){
+    			byte c = getBlock(width-xx,yy);
+    			if (c == 0 && foundGround){
+    				edgeY = yy-1;
+    				break;
+    			}
+    			foundGround = foundGround || (c == GROUND);
+    			
+    		}
+    		if (foundGround){
+    			edgeX = xx;
+    			break;
+    		}
+    	}
+    	if (foundGround){
+	    	for (int xx = 1; xx <= edgeX; xx++){
+	    		for (int yy = edgeY; yy < height; yy++){
+	    			setBlock(width-xx,yy,GROUND);
+	    		}
+	    	}
+    	}
+    	else {
+
+	    	for (int xx = 1; xx <= 16; xx++){
+	    		for (int yy = height-3; yy < height; yy++){
+	    			setBlock(width-xx,yy,GROUND);
+	    		}
+	    	}
+    	}//place the exit
     	boolean foundExit = false;
     	for (int offset = 0; offset <= 10 && !foundExit; offset++){
     		int xx = width-8+ ((offset % 2)*2-1)*(offset/2);
@@ -82,8 +143,21 @@ public class CustomizedLevel extends Level implements LevelInterface {
     			}
     		}
     	}
-    	fixWalls();
-    	fixHills();
+    }
+    private void fixCannons(){
+
+    	for (int xx = 0 ; xx < width ; xx++){
+    		for (int yy = 0; yy < height; yy++){
+    			if (getBlock(xx,yy) == 0){
+	    			if (getBlock(xx,yy-1) == CANNON){
+	    				setBlock(xx,yy,CustomizedLevel.CANNON_CONNECTOR);
+	    			}
+	    			if (getBlock(xx,yy-1) == CANNON_CONNECTOR || getBlock(xx,yy-1) ==  CANNON_POLE){
+	    				setBlock(xx,yy,CustomizedLevel.CANNON_POLE);
+	    			}
+    			}
+    		}
+    	}
     }
     public void fixPipes(){
     	for (int xx = 0; xx < width; xx++){
@@ -137,6 +211,9 @@ public class CustomizedLevel extends Level implements LevelInterface {
 				case "7.0":
 					setBlock(xx, yy,COIN);
 					break;
+				case "8.0":
+					setBlock(xx, yy,CANNON);
+					break;
 				default:
 					break;
 				}
@@ -171,13 +248,43 @@ public class CustomizedLevel extends Level implements LevelInterface {
             for (int y = 0; y < height + 1; y++)
             {
 		        if (!blockMap[x][y] && getBlockCapped(x,y) == GROUND){
-		        	setBlock(x,y,HILL_TOP_LEFT);
+		        	//TODO figure this out
+		        	//setBlock(x,y,HILL_TOP_LEFT);
+		        	setBlock(x,y,ROCK);
 		        }
             }
         }
     }
     private void fixHills(){
-    	
+    	for (int xx = 0; xx < width; xx++){
+    		for (int yy= 0; yy < height; yy++){
+    			if (getBlock(xx,yy) == HILL_TOP_LEFT){
+    				int nx = xx+1;
+    				fillHillDown(xx,yy,1);
+    				for (; getBlock(nx,yy) == HILL_TOP_LEFT; nx++){
+    					setBlock(nx,yy,HILL_TOP);
+        				fillHillDown(nx,yy,0);
+    				}
+    				setBlock(nx,yy,HILL_TOP_RIGHT);
+    				fillHillDown(nx,yy,-1);
+    			}
+    		}
+    	}
+    }
+    private void fillHillDown(int xx, int yy,int side){
+    	for (int ny = yy+1; ny < height; ny++){
+    		if (getBlock(xx,ny) == 0 || getBlock(xx,ny) == HILL_TOP_LEFT){
+    			if (side == 0){
+    				setBlock(xx,ny,Level.HILL_FILL);
+    			}
+    			else if (side == 1){
+    				setBlock(xx,ny,Level.HILL_LEFT);    				
+    			}
+    			else if (side == -1){
+    				setBlock(xx,ny,Level.HILL_RIGHT);    				
+    			}
+    		}
+    	}
     }
     private void blockify(Level level, boolean[][] blocks, int width, int height){
         int to = 0;
