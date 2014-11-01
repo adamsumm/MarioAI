@@ -367,7 +367,6 @@ public class Mario extends Sprite
         canShoot = !keys[KEY_SPEED];
 
         mayJump = (onGround || sliding) && !keys[KEY_JUMP];
-
         xFlipPic = facing == -1;
 
         runTime += (Math.abs(xa)) + 5;

@@ -12,7 +12,6 @@ import java.util.Random;
 
 import org.json.JSONObject;
 
-import cmps244Lib.WeightPair;
 import dk.itu.mario.engine.sprites.Enemy;
 import dk.itu.mario.engine.sprites.SpriteTemplate;
 import dk.itu.mario.level.Level;
@@ -27,7 +26,7 @@ public class LevelNode {
 	public int position;
 	public static double K = Math.sqrt(2);
 	public static int levelSize = 320;
-	public static int numIterations = 1000;
+	public static int numIterations = 100;
 	static double epsilon = 1e-6;
 	public LevelNode parent;
 	ArrayList<LevelNode> children;
@@ -235,6 +234,24 @@ public class LevelNode {
 	}
 	public double EvaluateLevel(ArrayList<LevelNode> restOfLevel){
 		LevelEntity[][] level = constructLevel(restOfLevel);
+		
+
+		int[] distanceFromGround = getDistanceFromGround(level);
+		double[] groundStatistics = new double[5];
+		getStatistics(distanceFromGround,groundStatistics);
+		
+
+		double distanceFromGap = 16;
+		double distanceFromEnemy = 20;
+		double maxGap = 14;
+		if (groundStatistics[3] > maxGap){
+			return -100000;
+		}
+
+		int[] goodStuff = getGoodStuff(level);
+		double[] goodStatistics = new double[5];
+		getStatistics(goodStuff,goodStatistics);
+		
 		int[] enemyDanger = getEnemyDanger(level);
 		double[] enemyStatistics = new double[5];
 		getStatistics(enemyDanger,enemyStatistics);
@@ -243,6 +260,7 @@ public class LevelNode {
 		int[] gapDanger = getGapDanger(level);
 		double[] gapStatistics = new double[5];
 		getStatistics(gapDanger,gapStatistics);
+
 		
 		int[] danger = new int[gapDanger.length];
 		for (int ii= 0; ii < danger.length; ii++){
@@ -252,7 +270,30 @@ public class LevelNode {
 		getStatistics(danger,dangerStatistics);
 		
 		
-		return danger[1];
+		BasicNode start = new BasicNode(0,12);
+		BasicNode goal = null;
+		for (int ii = level.length-1; ii > level.length-20; ii--){
+			for (int jj = 1; jj < level[0].length; jj++){
+				if (level[ii][jj] == LevelEntity.Solid && level[ii][jj-1] == LevelEntity.Empty){
+					goal = new BasicNode(ii,jj-1);
+				}
+			}
+		}
+
+		ArrayList<BasicNode> path = BasicAStar.GetPath(level,start,goal);
+		
+		if (path == null){
+			return -100000;
+		}
+		System.out.println(goodStatistics[1]);
+		
+		return -50*goodStatistics[1]-Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
+				-Math.pow(distanceFromGap-gapStatistics[1],2.0)
+				+ 0.01*gapStatistics[2];
+		//System.out.println(-Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2]);
+		
+		//return -Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2];
+		//return danger[1];
 		//Decent formula for jumpiness -Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2];
 		//return -enemyStatistics[1]+0.01*-enemyStatistics[2]-enemyStatistics[4];
 	}
@@ -385,6 +426,59 @@ public class LevelNode {
 			distanceFromEnemy++;
 		}
 		return dangerArray;
+	}
+	public int[] getDistanceFromGround(LevelEntity[][] level){
+		int[] dangerArray = new int[level.length];
+		Arrays.fill(dangerArray, Integer.MAX_VALUE);
+		int distanceFromGround = level.length;
+
+		for (int xx = 0; xx < level.length; xx++){
+			if (level[xx][13] == LevelEntity.Solid){
+				distanceFromGround = 0;
+				int reverseDistanceFromGround = 1;
+				for (int nx = xx-1; nx >= 0; nx--){
+					if (dangerArray[xx] > reverseDistanceFromGround){
+						dangerArray[xx] = reverseDistanceFromGround;
+					}
+					else {
+						break;
+					}
+					reverseDistanceFromGround++;
+				}
+			}
+			
+			dangerArray[xx] = distanceFromGround;
+			distanceFromGround++;
+		}
+		return dangerArray;
+	}
+
+	public int[] getGoodStuff(LevelEntity[][] level){
+		int[] goodArray = new int[level.length];
+		Arrays.fill(goodArray, Integer.MAX_VALUE);
+		int distanceFromGround = level.length;
+
+		for (int xx = 0; xx < level.length; xx++){
+			for (int yy = 0; yy < level[0].length; yy++){
+				if (level[xx][yy] == LevelEntity.Coin || level[xx][yy] == LevelEntity.CoinBlock || level[xx][yy] == LevelEntity.PowerUp){
+					distanceFromGround = 0;
+					int reverseDistanceFromGround = 1;
+					for (int nx = xx-1; nx >= 0; nx--){
+						if (goodArray[xx] > reverseDistanceFromGround){
+							goodArray[xx] = reverseDistanceFromGround;
+						}
+						else {
+							break;
+						}
+						reverseDistanceFromGround++;
+					}
+					break;
+				}
+			}
+			goodArray[xx] = distanceFromGround;
+			distanceFromGround++;
+		}
+		return goodArray;
 	}
 	public int[] getGapDanger(LevelEntity[][] level){
 		int[] dangerArray = new int[level.length];

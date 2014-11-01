@@ -3,6 +3,7 @@ package cmps244;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
 
 import org.json.JSONObject;
@@ -46,19 +47,53 @@ public class CustomizedLevel extends Level implements LevelInterface {
     }
     public void create(){
     	long startTime = System.nanoTime();
+    	
+
+    	startTime = System.nanoTime();
+    	/*
+		LevelEntity[][] testLevel = new LevelEntity[width][height];
+		
+		int nextJump = 8;
+		int yy = 14;
+		Random rando = new Random();
+		for (int ii = 0; ii < width; ii++){
+			if (nextJump == 0){
+				yy = yy + rando.nextInt(9)-4;
+				yy = yy < 1 ? 1 : yy;
+				yy = yy > 14 ? 14 : yy;
+				nextJump = rando.nextInt(15);
+				ii += 4;
+			}
+			testLevel[ii][yy] = LevelEntity.Solid;
+			nextJump--;
+		}
+			
+		ArrayList<BasicNode> path = BasicAStar.GetPath(testLevel, new BasicNode(0,13), new BasicNode(width-1,yy-1));
+		//.out.println(path);
+		System.out.println((System.nanoTime()-startTime)/1000000000.0);
+		System.exit(0);
+		*/
     	String startString = "";
-    	startString = "0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,;";
+    	startString = "0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;0.0,0.0,;1.0,1.0,;";
+    	//startString = "0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,;1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,;";
     	LevelNode node = new LevelNode(startString,getTiles());
+    	for (int ii = 0; ii < 3; ii++){
+    		LevelNode tempNode = new LevelNode(startString,getTiles());
+    		tempNode.parent = node;
+    		node = tempNode;
+    	}
 		//LevelNode node = new LevelNode(getTiles());
 		while ( node.getTotalSize() < this.width-16){
 			node = node.selectAction();
 		}
 		System.out.println(node.getTotalSize());
 		System.out.println((System.nanoTime()-startTime)/1000000000.0);
+		
+		
     	startTime = System.nanoTime();
 		while (node != null){
 			int pos = node.getTotalSize()-node.getSize();
-			fillLevel(pos,0,node.levelChunk,1);
+			fillLevel(pos,0,node.levelChunk,2);
 			node = node.parent;
 		}
 		postProcessing();
@@ -100,7 +135,7 @@ public class CustomizedLevel extends Level implements LevelInterface {
     		for (int yy = height-1; yy >= 0; yy--){
     			byte c = getBlock(width-xx,yy);
     			if (c == 0 && foundGround){
-    				edgeY = yy-1;
+    				edgeY = yy+1;
     				break;
     			}
     			foundGround = foundGround || (c == GROUND);
@@ -183,7 +218,7 @@ public class CustomizedLevel extends Level implements LevelInterface {
     }
     public void fillLevel(int left, int top, String str, int difficulty ){
 		String[] rows = str.split(";");
-
+		HashSet<Integer> enemyColumns = new HashSet<Integer>();
 		for (int yy = top; yy < rows.length; yy++){
 			String[] columns = rows[yy-top].split(",");
 			for (int xx = left; xx < left+columns.length; xx++){
@@ -201,8 +236,11 @@ public class CustomizedLevel extends Level implements LevelInterface {
 					setBlock(xx, yy, BLOCK_COIN);
 					break;
 				case "5.0":
-					setSpriteTemplate(xx, yy,
-                            new SpriteTemplate(Enemy.ENEMY_GOOMBA, false));
+					if (!enemyColumns.contains(xx)){
+						enemyColumns.add(xx);
+						setSpriteTemplate(xx, yy,
+	                            GetEnemy(difficulty));
+					}
 					//levelChunk[ii][jj] = LevelEntity.Enemy;
 					break;
 				case "6.0":
@@ -221,6 +259,47 @@ public class CustomizedLevel extends Level implements LevelInterface {
 			}
 		}
 	}
+    private SpriteTemplate GetEnemy(int difficulty){
+    	Random rand = new Random();
+    	if (difficulty == 0){
+    		if (rand.nextInt(3) > 1){
+    			return new SpriteTemplate(Enemy.ENEMY_GREEN_KOOPA,false);
+    		}
+    		else {
+    			return new SpriteTemplate(Enemy.ENEMY_GOOMBA,false);
+    		}
+    		
+    	}
+    	else if (difficulty == 1){
+    		int randVal = rand.nextInt(5);
+    		if (randVal > 3){
+    			return new SpriteTemplate(Enemy.ENEMY_RED_KOOPA,rand.nextInt(5) > 3);
+    		}
+    		else if (randVal > 1){
+    			return new SpriteTemplate(Enemy.ENEMY_GREEN_KOOPA,rand.nextInt(5) > 3);
+    			
+    		}
+    		else {
+    			return new SpriteTemplate(Enemy.ENEMY_GOOMBA,false);
+    		}
+    		
+    	}
+    	else if (difficulty == 2){
+
+    		int randVal = rand.nextInt(6);
+    		if (randVal > 3){
+    			return new SpriteTemplate(Enemy.ENEMY_RED_KOOPA,rand.nextInt(6) > 4);
+    		}
+    		else if (randVal > 1){
+    			return new SpriteTemplate(Enemy.ENEMY_GREEN_KOOPA,rand.nextInt(6) > 4);
+    			
+    		}
+    		else {
+    			return new SpriteTemplate(Enemy.ENEMY_GOOMBA,false);
+    		}
+    	}
+    	return null;
+    }
     private void fixWalls()
     {
         boolean[][] blockMap = new boolean[width + 1][height + 1];
