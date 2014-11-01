@@ -120,7 +120,16 @@ public class CustomizedLevel extends Level implements LevelInterface {
     		}
     	}
     	fixPipes();
-    	
+    	for (int xx = 0; xx < width; xx++){
+    		for (int yy = 0; yy < height; yy++){
+    			if (getBlock(xx,yy) == Level.TUBE_TOP_LEFT){
+    				if (this.getSpriteTemplate(xx+1, yy-2) != null){
+    					this.setSpriteTemplate(xx+1,yy-2,null);
+    					this.setSpriteTemplate(xx,yy,new SpriteTemplate(Enemy.ENEMY_FLOWER,false));
+    				}
+    			}
+    		}
+    	}
     	
     	fixWalls();
     	fixHills();
