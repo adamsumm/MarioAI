@@ -16,8 +16,7 @@ public class BasicAStar {
 				 { 3,-3},
 				 { 3,-4},
 				 { 4,-4},
-				 { 5,-4},
-				 { 6,-4},
+				 { 5,-3},
 				 { 6,-3},
 				 { 7,-3},
 				 { 8,-2},
@@ -36,7 +35,7 @@ public class BasicAStar {
 		Hashtable<BasicNode,Double> fScore =new Hashtable<BasicNode,Double>();
 		BasicNode[][] nodeGrid = new BasicNode[level.length][level[0].length];
 
-		PriorityQueue<BasicNode> openSet = new PriorityQueue<BasicNode>(new BasicComparator(fScore));
+		PriorityQueue<BasicNode> openSet = new PriorityQueue<BasicNode>(500,new BasicComparator(fScore));
 		
 		nodeGrid[start.xx][start.yy] = start;
 		nodeGrid[goal.xx][goal.yy] = goal;
