@@ -23,7 +23,7 @@ public class CustomizedLevel extends Level implements LevelInterface {
     public CustomizedLevel(int width, int height, long seed, int difficulty,
                            int type, GamePlay playerMetrics) {
         super(width, height);
-        create();
+        create(difficulty,playerMetrics);
     }
     public String[] getTiles(){
     	try {
@@ -45,7 +45,7 @@ public class CustomizedLevel extends Level implements LevelInterface {
 		}
 
     }
-    public void create(){
+    public void create(int difficulty, GamePlay playerMetrics){
     	long startTime = System.nanoTime();
     	
 
@@ -82,6 +82,8 @@ public class CustomizedLevel extends Level implements LevelInterface {
     		tempNode.parent = node;
     		node = tempNode;
     	}
+    	LevelNode.difficulty = difficulty;
+    	LevelNode.playerMetrics = playerMetrics;
 		//LevelNode node = new LevelNode(getTiles());
 		while ( node.getTotalSize() < this.width-16){
 			node = node.selectAction();
@@ -93,7 +95,7 @@ public class CustomizedLevel extends Level implements LevelInterface {
     	startTime = System.nanoTime();
 		while (node != null){
 			int pos = node.getTotalSize()-node.getSize();
-			fillLevel(pos,0,node.levelChunk,2);
+			fillLevel(pos,0,node.levelChunk,difficulty);
 			node = node.parent;
 		}
 		postProcessing();

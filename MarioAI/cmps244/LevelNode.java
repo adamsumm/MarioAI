@@ -12,6 +12,7 @@ import java.util.Random;
 
 import org.json.JSONObject;
 
+import dk.itu.mario.MarioInterface.GamePlay;
 import dk.itu.mario.engine.sprites.Enemy;
 import dk.itu.mario.engine.sprites.SpriteTemplate;
 import dk.itu.mario.level.Level;
@@ -27,6 +28,8 @@ public class LevelNode {
 	public static double K = Math.sqrt(2);
 	public static int levelSize = 320;
 	public static int numIterations = 100;
+	public static int difficulty;
+	public static GamePlay playerMetrics;
 	static double epsilon = 1e-6;
 	public LevelNode parent;
 	ArrayList<LevelNode> children;
@@ -241,9 +244,7 @@ public class LevelNode {
 		getStatistics(distanceFromGround,groundStatistics);
 		
 
-		double distanceFromGap = 16;
-		double distanceFromEnemy = 20;
-		double maxGap = 14;
+		double maxGap = 8;
 		if (groundStatistics[3] > maxGap){
 			return -100000;
 		}
@@ -285,11 +286,30 @@ public class LevelNode {
 		if (path == null){
 			return -100000;
 		}
-		System.out.println(goodStatistics[1]);
-		
+		/*
 		return -50*goodStatistics[1]-Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
 				-Math.pow(distanceFromGap-gapStatistics[1],2.0)
 				+ 0.01*gapStatistics[2];
+				*/
+		double goodValue = -50*goodStatistics[1]; //Want to have lots of good stuff (coins, powerups, etc.)
+		double gapHating = playerMetrics.timesOfDeathByFallingIntoGap;
+		double enemyHating = playerMetrics.timesOfDeathByRedTurtle +	playerMetrics.timesOfDeathByGoomba +	
+				playerMetrics.timesOfDeathByGreenTurtle+		playerMetrics.timesOfDeathByArmoredTurtle+
+				playerMetrics.timesOfDeathByJumpFlower+	playerMetrics.timesOfDeathByCannonBall+
+				playerMetrics.timesOfDeathByChompFlower; 
+		
+		double  enemyLoving = 	(playerMetrics.RedTurtlesKilled+	playerMetrics.GreenTurtlesKilled+
+				playerMetrics.ArmoredTurtlesKilled+playerMetrics.GoombasKilled+
+				playerMetrics.CannonBallKilled+playerMetrics.JumpFlowersKilled+
+				playerMetrics.ChompFlowersKilled)/((double) playerMetrics.totalEnemies); 
+		
+		double skill = playerMetrics.completionTime;
+		double distanceFromGap = 16+ gapHating * 6+ (skill-100)*0.1-difficulty*2;
+		double distanceFromEnemy = 20 + enemyHating*5 - enemyLoving*2+ (skill-100)*0.1-difficulty*2;
+		return goodValue+ Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
+				-Math.pow(distanceFromGap-gapStatistics[1],2.0)
+				+ 0.01*gapStatistics[2];
+		
 		//System.out.println(-Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2]);
 		
 		//return -Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2];
