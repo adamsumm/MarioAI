@@ -244,9 +244,10 @@ public class LevelNode {
 		getStatistics(distanceFromGround,groundStatistics);
 		
 
-		double maxGap = 8;
+		double maxGap = 12;
+		double score = 0;
 		if (groundStatistics[3] > maxGap){
-			return -100000;
+			score -=1000000;
 		}
 
 		int[] goodStuff = getGoodStuff(level);
@@ -257,15 +258,29 @@ public class LevelNode {
 		double[] enemyStatistics = new double[5];
 		getStatistics(enemyDanger,enemyStatistics);
 
-
 		int[] gapDanger = getGapDanger(level);
 		double[] gapStatistics = new double[5];
 		getStatistics(gapDanger,gapStatistics);
 
+
+		int enemyCount = 0;
+		int gapCount = 0;
+		for (int ii = 0; ii < enemyDanger.length; ii++){
+			if (enemyDanger[ii] == 0){
+				enemyCount++;
+			}
+			if (gapDanger[ii] == 0){
+				gapCount++;
+			}
+		}
 		
+		int dangerCount = 0;
 		int[] danger = new int[gapDanger.length];
 		for (int ii= 0; ii < danger.length; ii++){
 			danger[ii] = Math.min(gapDanger[ii],enemyDanger[ii]);
+			if (danger[ii] == 0){
+				dangerCount++;
+			}
 		}
 		double[] dangerStatistics = new double[5];
 		getStatistics(danger,dangerStatistics);
@@ -277,21 +292,30 @@ public class LevelNode {
 			for (int jj = 1; jj < level[0].length; jj++){
 				if (level[ii][jj] == LevelEntity.Solid && level[ii][jj-1] == LevelEntity.Empty){
 					goal = new BasicNode(ii,jj-1);
+					break;
 				}
 			}
+			if (goal != null){
+				break;
+			}
 		}
-
-		ArrayList<BasicNode> path = BasicAStar.GetPath(level,start,goal);
-		
-		if (path == null){
-			return -100000;
+		if (goal != null){
+			ArrayList<BasicNode> path = BasicAStar.GetPath(level,start,goal);
+			
+			if (path == null){
+				score -=1000000;
+			}
+			
+		}
+		else {
+			score -=1000000;
 		}
 		/*
 		return -50*goodStatistics[1]-Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
 				-Math.pow(distanceFromGap-gapStatistics[1],2.0)
 				+ 0.01*gapStatistics[2];
 				*/
-		double goodValue = -50*goodStatistics[1]; //Want to have lots of good stuff (coins, powerups, etc.)
+		double goodValue = -2*goodStatistics[1]; //Want to have lots of good stuff (coins, powerups, etc.)
 		double gapHating = playerMetrics.timesOfDeathByFallingIntoGap;
 		double enemyHating = playerMetrics.timesOfDeathByRedTurtle +	playerMetrics.timesOfDeathByGoomba +	
 				playerMetrics.timesOfDeathByGreenTurtle+		playerMetrics.timesOfDeathByArmoredTurtle+
@@ -303,13 +327,21 @@ public class LevelNode {
 				playerMetrics.CannonBallKilled+playerMetrics.JumpFlowersKilled+
 				playerMetrics.ChompFlowersKilled)/((double) playerMetrics.totalEnemies); 
 		
-		double skill = playerMetrics.completionTime;
-		double distanceFromGap = 16+ gapHating * 6+ (skill-100)*0.1-difficulty*2;
-		double distanceFromEnemy = 20 + enemyHating*5 - enemyLoving*2+ (skill-100)*0.1-difficulty*2;
-		return goodValue+ Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
-				-Math.pow(distanceFromGap-gapStatistics[1],2.0)
-				+ 0.01*gapStatistics[2];
+		double completionTime = playerMetrics.completionTime * (gapHating+enemyHating > 1 ? 250 : 1);
+		if (completionTime > 100){
+			enemyHating += 3;
+			gapHating += 3;
+		}
+	//	double distanceFromGap = 16+ gapHating * 6+ (skill-10)*0.1-difficulty*2;
+	//	double distanceFromEnemy = 20 + enemyHating*10 - enemyLoving*1+ (skill-10)*0.1-difficulty*2;
+	//	System.out.println(enemyHating*Math.pow(enemyCount,2.0) + ", "+ gapHating*Math.pow(gapCount,2.0));
 		
+		return score-(enemyHating-enemyLoving)*Math.pow(enemyCount,2.0)-gapHating*Math.pow(gapCount,2.0);
+		/*
+		return score +goodValue- Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
+				-Math.pow(distanceFromGap-gapStatistics[1],2.0)-enemyHating*Math.pow(enemyCount,2.0)
+				+ 0.05*gapStatistics[2];
+		*/
 		//System.out.println(-Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2]);
 		
 		//return -Math.pow(20.0-gapStatistics[1],2.0)+ 0.01*gapStatistics[2];

@@ -82,6 +82,15 @@ public class CustomizedLevel extends Level implements LevelInterface {
     		tempNode.parent = node;
     		node = tempNode;
     	}
+    	
+    	int deaths = (int) (playerMetrics.timesOfDeathByFallingIntoGap+ playerMetrics.timesOfDeathByRedTurtle +	playerMetrics.timesOfDeathByGoomba +	
+				playerMetrics.timesOfDeathByGreenTurtle+		playerMetrics.timesOfDeathByArmoredTurtle+
+				playerMetrics.timesOfDeathByJumpFlower+	playerMetrics.timesOfDeathByCannonBall+
+				playerMetrics.timesOfDeathByChompFlower); 
+    	difficulty = 3 - deaths;
+    	if (difficulty < 1){
+    		difficulty = 1;
+    	}
     	LevelNode.difficulty = difficulty;
     	LevelNode.playerMetrics = playerMetrics;
 		//LevelNode node = new LevelNode(getTiles());
@@ -272,16 +281,20 @@ public class CustomizedLevel extends Level implements LevelInterface {
 	}
     private SpriteTemplate GetEnemy(int difficulty){
     	Random rand = new Random();
-    	if (difficulty == 0){
-    		if (rand.nextInt(3) > 1){
-    			return new SpriteTemplate(Enemy.ENEMY_GREEN_KOOPA,false);
+    	if (difficulty == 1){
+    		if (rand.nextInt(2) == 1){
+	    		if (rand.nextInt(3) > 1){
+	    			return new SpriteTemplate(Enemy.ENEMY_GREEN_KOOPA,false);
+	    		}
+	    		else {
+	    			return new SpriteTemplate(Enemy.ENEMY_GOOMBA,false);
+	    		}
     		}
     		else {
-    			return new SpriteTemplate(Enemy.ENEMY_GOOMBA,false);
+    			return null;
     		}
-    		
     	}
-    	else if (difficulty == 1){
+    	else if (difficulty == 2){
     		int randVal = rand.nextInt(5);
     		if (randVal > 3){
     			return new SpriteTemplate(Enemy.ENEMY_RED_KOOPA,rand.nextInt(5) > 3);
@@ -295,7 +308,7 @@ public class CustomizedLevel extends Level implements LevelInterface {
     		}
     		
     	}
-    	else if (difficulty == 2){
+    	else if (difficulty == 3){
 
     		int randVal = rand.nextInt(6);
     		if (randVal > 3){
