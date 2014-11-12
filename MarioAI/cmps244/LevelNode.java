@@ -27,7 +27,7 @@ public class LevelNode {
 	public int position;
 	public static double K = Math.sqrt(2);
 	public static int levelSize = 320;
-	public static int numIterations = 100;
+	public static int numIterations = 200;
 	public static int difficulty;
 	public static GamePlay playerMetrics;
 	static double epsilon = 1e-6;
@@ -143,7 +143,7 @@ public class LevelNode {
             System.out.println("Unexpected selection!");
             selected = 0;
         }
-
+        System.out.println(bestValue);
         return children.get(selected);
     }
 	private LevelNode select() {
@@ -244,7 +244,7 @@ public class LevelNode {
 		getStatistics(distanceFromGround,groundStatistics);
 		
 
-		double maxGap = 12;
+		double maxGap = 6+2*difficulty;
 		double score = 0;
 		if (groundStatistics[3] > maxGap){
 			score -=1000000;
@@ -310,11 +310,25 @@ public class LevelNode {
 		else {
 			score -=1000000;
 		}
-		/*
-		return -50*goodStatistics[1]-Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
-				-Math.pow(distanceFromGap-gapStatistics[1],2.0)
-				+ 0.01*gapStatistics[2];
-				*/
+	
+		//CURRENT PIECE
+		LevelEntity[][] chunk = levelInstantiations.get(this.levelChunk);
+		int currentGapCount = 0;
+		int currentEnemyCount = 0;
+		for (int ii = 0; ii < chunk.length; ii++){
+			
+			for (int jj = 0; jj < chunk[0].length; jj++){
+				if (chunk[ii][jj] == LevelEntity.Enemy || chunk[ii][jj] == LevelEntity.Cannon){
+					currentEnemyCount++;
+				}
+			}
+			if (chunk[ii][13] == LevelEntity.Empty){
+				currentGapCount++;
+			}
+		}
+		
+		
+		
 		double goodValue = -2*goodStatistics[1]; //Want to have lots of good stuff (coins, powerups, etc.)
 		double gapHating = playerMetrics.timesOfDeathByFallingIntoGap;
 		double enemyHating = playerMetrics.timesOfDeathByRedTurtle +	playerMetrics.timesOfDeathByGoomba +	
@@ -332,11 +346,33 @@ public class LevelNode {
 			enemyHating += 3;
 			gapHating += 3;
 		}
-	//	double distanceFromGap = 16+ gapHating * 6+ (skill-10)*0.1-difficulty*2;
-	//	double distanceFromEnemy = 20 + enemyHating*10 - enemyLoving*1+ (skill-10)*0.1-difficulty*2;
+		double distanceFromGap = 16+ gapHating * 6-difficulty*2;
+		double distanceFromEnemy = 20 + enemyHating*10 - enemyLoving*1-difficulty*2;
 	//	System.out.println(enemyHating*Math.pow(enemyCount,2.0) + ", "+ gapHating*Math.pow(gapCount,2.0));
 		
-		return score-(enemyHating-enemyLoving)*Math.pow(enemyCount,2.0)-gapHating*Math.pow(gapCount,2.0);
+	
+
+		return 1.0/(1.0+Math.exp(- 
+				(
+				score-
+				(1.5-difficulty)*((enemyHating-enemyLoving)*currentEnemyCount
+				+gapHating*currentGapCount
+				)
+				)+
+				0.0001*(goodValue- Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
+				-Math.pow(distanceFromGap-gapStatistics[1],2.0)-enemyHating*Math.pow(enemyCount,2.0)
+				+ 0.05*gapStatistics[2])
+				));
+		/*
+		return 1.0/(1.0+Math.exp(- 
+				(
+				score-
+				(1.5-difficulty)*((enemyHating-enemyLoving)*currentEnemyCount
+				+gapHating*currentGapCount
+				)
+				)
+				));
+	*/
 		/*
 		return score +goodValue- Math.pow(distanceFromEnemy-enemyStatistics[1],2.0)
 				-Math.pow(distanceFromGap-gapStatistics[1],2.0)-enemyHating*Math.pow(enemyCount,2.0)
