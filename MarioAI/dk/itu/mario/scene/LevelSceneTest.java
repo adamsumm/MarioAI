@@ -61,6 +61,14 @@ import cmps244.CustomizedGenerator;
 		        		CustomizedGenerator clg = new CustomizedGenerator();
 		        		GamePlay gp = new GamePlay();
 		        		gp = gp.read("player.txt");
+		        		
+		        		//read custom file
+		        		//set seed, and other things based on that
+		        		boolean nogaps = true;
+		        		clg.seed = 7;
+		        		if (nogaps){
+		        			gp.timesOfDeathByFallingIntoGap = 10;
+		        		}
 		        		currentLevel = (Level)clg.generateLevel(gp);
 		        		
 		        		//You can use the following commands if you want to benefit from

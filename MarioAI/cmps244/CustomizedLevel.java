@@ -17,12 +17,15 @@ import dk.itu.mario.engine.sprites.Enemy;
 import dk.itu.mario.engine.LevelFactory;
 
 public class CustomizedLevel extends Level implements LevelInterface {
+	public static Random rand = new Random(1);
 	public static final byte  CANNON = (byte) (14 + 0 * 16);
 	public static final byte  CANNON_CONNECTOR = (byte) (14 + 1 * 16);
 	public static final byte  CANNON_POLE = (byte) (14 + 2 * 16);
     public CustomizedLevel(int width, int height, long seed, int difficulty,
                            int type, GamePlay playerMetrics) {
         super(width, height);
+        rand = new Random(seed);
+        LevelNode.rand = new Random(seed);
         create(difficulty,playerMetrics);
     }
     public String[] getTiles(){
@@ -280,7 +283,6 @@ public class CustomizedLevel extends Level implements LevelInterface {
 		}
 	}
     private SpriteTemplate GetEnemy(int difficulty){
-    	Random rand = new Random();
     	if (difficulty == 1){
     		if (rand.nextInt(2) == 1){
 	    		if (rand.nextInt(3) > 1){

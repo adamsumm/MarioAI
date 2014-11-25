@@ -13,6 +13,7 @@ import java.util.Random;
 import cmps244.LevelEntity;
 public class CustomizedGenerator implements LevelGenerator {
 	
+	public static long seed = 2;
 	public static String readFile(String path, Charset encoding) 
 	  throws IOException {
 	  byte[] encoded = Files.readAllBytes(Paths.get(path));
@@ -20,7 +21,7 @@ public class CustomizedGenerator implements LevelGenerator {
 	}
 
 	public LevelInterface generateLevel(GamePlay playerMetrics) {
-		return new CustomizedLevel(320,15,new Random().nextLong(),1,1,playerMetrics);
+		return new CustomizedLevel(320,15,seed,1,1,playerMetrics);
 	}
 
 	

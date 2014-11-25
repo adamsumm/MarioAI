@@ -19,7 +19,7 @@ import dk.itu.mario.level.Level;
 
 
 public class LevelNode {
-	static Random rand = new Random();
+	static Random rand = new Random(1);
 	public ArrayList<WeightPair<String> >  potentialRight;
 	public static Hashtable<String,LevelNode> levelPieces = new Hashtable<String,LevelNode>();
 	public static Hashtable<String,LevelEntity[][]> levelInstantiations = new Hashtable<String,LevelEntity[][]>();

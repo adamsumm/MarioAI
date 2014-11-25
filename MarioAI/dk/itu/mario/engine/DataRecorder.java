@@ -838,7 +838,7 @@ public class DataRecorder {
 		gpm.write("player.txt");
 		System.out.println(detailedLog);
 		write(detailedLog);
-		
+		System.out.println("this happens");
 	}
 
 
